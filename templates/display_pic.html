@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>保存された写真を表示</title>
+</head>
+<body>
+
+<h1>picsディレクトリに保存された写真を表示</h1>
+
+<div class="contents">
+
+    {{range .}}
+
+    <img src="../server/pics/{{.}}" alt="pic">
+    <p>{{.}}</p>
+
+    {{end}}
+
+</div>
+
+</body>
+</html>
