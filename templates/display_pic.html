@@ -8,15 +8,10 @@
 
 <h1>picsディレクトリに保存された写真を表示</h1>
 
-<div class="contents">
-
+<div>
     {{range .}}
-
-    <img src="../server/pics/{{.}}" alt="pic">
-    <p>{{.}}</p>
-
+        <img src="../server/pics/{{.}}" alt="{{.}}">
     {{end}}
-
 </div>
 
 </body>
