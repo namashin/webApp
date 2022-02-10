@@ -3,8 +3,8 @@
 making web app in Golang<br> 
 
 ## Overview
-"/" <br>  
-this url showes index.html. <br>
+
+"/" <br> this url showes index.html. <br>
 and you can upload files(its saved in pics folder)<br>
 
 "/cookie"  <br>
