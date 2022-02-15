@@ -3,10 +3,16 @@ package main
 import (
 	"flag"
 	"log"
+	"sync"
+
+	"webApp/server"
 )
+
+var once sync.Once
 
 func init() {
 	log.SetPrefix("Server: ")
+	go once.Do(server.Start)
 }
 
 func main() {
@@ -15,7 +21,7 @@ func main() {
 	gateway := flag.String("gateway", "http:/127.0.0.1:5000", "web server gateway")
 	flag.Parse()
 
-	app := NewWebServer(uint16(*port), *gateway)
+	app := server.NewWebServer(uint16(*port), *gateway)
 	app.Run()
 
 }

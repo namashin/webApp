@@ -9,17 +9,28 @@
 <h1>here is index</h1>
 
 <div>
-    <form method="post" enctype="multipart/form-data">
-        <input type="file" name="inputFile">
+    <form method="post" enctype="multipart/form-data" action="http://127.0.0.1:8000/">
+        <input type="file" name="inputFile"><br>
+
+        <p>アップロードしたファイルの説明</p>
+        <input type="text" name="fileExplanation"><br>
+
+        <input type="hidden" name="token" value="{{.}}"><br>
+
+        <select name="fruit">
+            <option value="apple">apple</option>
+            <option value="pear">pear</option>
+            <option value="banana">banana</option>
+        </select>
+
         <input type="submit" value="送信">
     </form>
 </div>
 
 
-
 <div>
     <br>
-    <a href="http://127.0.0.1:8000/cookie">何回訪れたか？</a>
+    <a href="http://127.0.0.1:8000/cookie">このサイトに何回訪れたかみる？</a>
     <br>
 </div>
 

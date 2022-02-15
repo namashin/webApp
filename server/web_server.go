@@ -1,9 +1,9 @@
-package main
+package server
 
 import (
 	"bufio"
 	"encoding/json"
-	"github.com/google/uuid"
+	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -32,21 +32,6 @@ func (ws *WebServer) Gateway() string {
 	return ws.gateway
 }
 
-// GetCookie just return cookie value
-func GetCookie(w http.ResponseWriter, req *http.Request) *http.Cookie {
-	c, err := req.Cookie("session")
-	if err != nil {
-		// ランダムにIDを生成してくれる。
-		sID := uuid.New()
-		c = &http.Cookie{
-			Name:  "session",
-			Value: sID.String(),
-		}
-		http.SetCookie(w, c)
-	}
-	return c
-}
-
 func (ws *WebServer) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		port    uint16
@@ -66,6 +51,7 @@ func (ws *WebServer) ExpireCookie(w http.ResponseWriter, req *http.Request) {
 	c.MaxAge = -1
 	http.SetCookie(w, c)
 	log.Println("cookieを削除しました。")
+
 	http.Redirect(w, req, "/del/back", http.StatusSeeOther)
 }
 
@@ -73,12 +59,12 @@ func (ws *WebServer) checkVisitedCount(c *http.Cookie) int {
 
 	var visitedCount int
 
-	b, err := os.Open("cookie.txt")
+	pFile, err := os.Open("cookie.txt")
 	if err != nil {
 		log.Fatal("error in open file =>", err)
 	}
 
-	scan := bufio.NewScanner(b)
+	scan := bufio.NewScanner(pFile)
 
 	for i := 0; scan.Scan(); i++ {
 		line := scan.Text()
@@ -108,38 +94,10 @@ func (ws *WebServer) ShowCookieValue(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			log.Println("error in io.WriteString", err)
 		}
-		return
 	default:
 		log.Println("ERROR: invalid request method")
 		w.WriteHeader(http.StatusBadRequest)
 	}
-}
-
-func Save(fileName string, value string) error {
-	f, err := os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatal("Error in os.OpenFile =>>>", err)
-	}
-	defer f.Close()
-
-	_, err = f.WriteString(value + "\n")
-	if err != nil {
-		log.Fatal("Error in f.WriteString =>>>", err)
-	}
-	return nil
-}
-
-func JsonStatus(message string) []byte {
-	m, err := json.Marshal(struct {
-		Message string `json:"message"`
-	}{
-		Message: message,
-	})
-	if err != nil {
-		log.Println("json.Marshal error ", err)
-	}
-
-	return m
 }
 
 func (ws *WebServer) BackToIndex(w http.ResponseWriter, req *http.Request) {
@@ -155,60 +113,81 @@ func (ws *WebServer) BackToIndex(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func (ws *WebServer) UploadFileHandler(w http.ResponseWriter, req *http.Request) {
+	mf, fh, err := req.FormFile("inputFile")
+	fileExplanation := req.FormValue("fileExplanation")
+
+	if err != nil {
+		log.Println("error in req.FormFile", err)
+		_, err = io.WriteString(w, "ファイルを選択してください")
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		return
+	}
+
+	if !(len(fileExplanation) >= 10) {
+		log.Println("入力された写真の説明が機能していない可能性アリ")
+	}
+
+	err = Save("fileExplanation.txt", fileExplanation)
+	if err != nil {
+		log.Println("fileExplanation.txt does not saved", err)
+		return
+	}
+
+	val, ok := checkPullDownMenu(w, req)
+	if !ok {
+		log.Println("invalid select form")
+		return
+	}
+	fmt.Println("選ばれたのは" + val + "でした")
+
+	baseDir := GetBaseDirectory()
+
+	fPath := filepath.Join(baseDir, "pics", fh.Filename)
+	pFile, err := os.Create(fPath)
+	if err != nil {
+		log.Println("error in os.Create", err)
+		return
+	}
+	defer pFile.Close()
+
+	v, err := mf.Seek(0, io.SeekStart)
+	if err != nil {
+		log.Println("error in mf.Seek", err, "walked", v)
+		return
+	}
+	_, err = io.Copy(pFile, mf)
+	if err != nil {
+		log.Println("error in io.Copy *FILE", err)
+		return
+	}
+	log.Println(string(JsonStatus("success")))
+
+	// ファイル送信成功したら、元の/indexにリダイレクトさせる
+	http.Redirect(w, req, "/index", http.StatusFound)
+}
+
 func (ws *WebServer) index(w http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case http.MethodGet:
+
 		t, err := template.ParseFiles(path.Join("templates", "index.html"))
 		if err != nil {
 			log.Println("err in parse files", err)
 			return
 		}
-		err = t.Execute(w, "")
+		token := makeToken()
 
+		err = t.Execute(w, token)
 		if err != nil {
 			log.Println("ERROR in execute error", err)
 			return
 		}
 	case http.MethodPost:
-		mf, fh, err := req.FormFile("inputFile")
-		if err != nil {
-			log.Println("error in req.FormFile", err)
-			_, err = io.WriteString(w, "ファイルを選択してください")
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			return
-		}
-
-		wd, err := os.Getwd()
-		if err != nil {
-			log.Println("error in os.GetWd()")
-			return
-		}
-
-		fPath := filepath.Join(wd, "server", "pics", fh.Filename)
-		pFile, err := os.Create(fPath)
-		if err != nil {
-			log.Println("error in os.Create", err)
-			return
-		}
-		defer pFile.Close()
-
-		_, err = mf.Seek(0, 0)
-		if err != nil {
-			log.Println("error in mf.Seek", err)
-			return
-		}
-		_, err = io.Copy(pFile, mf)
-		if err != nil {
-			log.Println("error in io.Copy *FILE", err)
-			return
-		}
-		log.Println(string(JsonStatus("success")))
-
-		// ファイル送信成功したら、元の/indexにリダイレクトさせる
-		http.Redirect(w, req, "/index", http.StatusFound)
+		ws.UploadFileHandler(w, req)
 	default:
 		log.Println("ERROR: invalid request method")
 		w.WriteHeader(http.StatusBadRequest)
@@ -229,7 +208,7 @@ func (ws *WebServer) DisplayPort(w http.ResponseWriter, req *http.Request) {
 }
 
 // DisplaySavedPic
-// 写真が表示されない
+// 写真が表示されない なぜ??
 func (ws *WebServer) DisplaySavedPic(w http.ResponseWriter, req *http.Request) {
 	t, err := template.ParseFiles("./templates/display_pic.html")
 	if err != nil {
@@ -237,7 +216,7 @@ func (ws *WebServer) DisplaySavedPic(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	fNamesInPicsDir, err := ioutil.ReadDir("./server/pics/")
+	fNamesInPicsDir, err := ioutil.ReadDir("./pics")
 	if err != nil {
 		log.Println("error in ReadDir", err)
 		return
@@ -255,8 +234,15 @@ func (ws *WebServer) DisplaySavedPic(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func Handler(w http.ResponseWriter, req *http.Request) {
+	io.WriteString(w, "test")
+}
+
 func (ws *WebServer) Run() {
 	http.HandleFunc("/", ws.index)
+
+	http.HandleFunc("/test", Handler)
+
 	http.HandleFunc("/del", ws.ExpireCookie)
 	http.HandleFunc("/del/back", ws.BackToIndex)
 	http.HandleFunc("/cookie", ws.ShowCookieValue)
