@@ -152,7 +152,15 @@ func (ws *WebServer) UploadFileHandler(w http.ResponseWriter, req *http.Request)
 		log.Println("error in os.Create", err)
 		return
 	}
-	defer pFile.Close()
+
+	//defer pFile.Close()
+	defer func() {
+		err = pFile.Close()
+		if err != nil {
+			log.Println("maybe file close error", err)
+			return
+		}
+	}()
 
 	v, err := mf.Seek(0, io.SeekStart)
 	if err != nil {
@@ -234,15 +242,13 @@ func (ws *WebServer) DisplaySavedPic(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func Handler(w http.ResponseWriter, req *http.Request) {
-	io.WriteString(w, "test")
-}
+//func Handler(w http.ResponseWriter, req *http.Request) {
+//	io.WriteString(w, "test")
+//}
 
 func (ws *WebServer) Run() {
 	http.HandleFunc("/", ws.index)
-
-	http.HandleFunc("/test", Handler)
-
+	//	http.HandleFunc("/test", Handler)
 	http.HandleFunc("/del", ws.ExpireCookie)
 	http.HandleFunc("/del/back", ws.BackToIndex)
 	http.HandleFunc("/cookie", ws.ShowCookieValue)

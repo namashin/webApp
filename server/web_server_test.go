@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -23,24 +22,24 @@ func TestWebServer_Port(t *testing.T) {
 	}
 }
 
-func TestHandler(t *testing.T) {
-	//Init
-	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	w := httptest.NewRecorder()
-
-	//Execution
-	Handler(w, req)
-
-	resp := w.Result()
-	fmt.Println(resp)
-
-	body, _ := ioutil.ReadAll(resp.Body)
-
-	// Validation
-	if string(body) != "test" {
-		t.Errorf("error")
-	}
-}
+//func TestHandler(t *testing.T) {
+//	//Init
+//	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+//	w := httptest.NewRecorder()
+//
+//	//Execution
+//	Handler(w, req)
+//
+//	resp := w.Result()
+//	fmt.Println(resp)
+//
+//	body, _ := ioutil.ReadAll(resp.Body)
+//
+//	// Validation
+//	if string(body) != "test" {
+//		t.Errorf("error")
+//	}
+//}
 
 func TestGetCookie(t *testing.T) {
 	// Init
