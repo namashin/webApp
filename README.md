@@ -1,30 +1,40 @@
 # webApp in Golang
 
-making web app in Golang<br> 
+Making web app in Golang<br> 
 
 ## Overview
 
-"/" <br> this url showes index.html. <br>
-and you can upload files(its saved in pics folder)<br>
+###"/"
+This url shows index.html. <br>
+And you can upload files(it is saved in pics folder).<br>
 
-"/cookie"  <br>
-you can check  how many times you visited this site.<br>
+<br>
 
-"/del"  <br>
-just delete your cookie.<br>
+###"/cookie"
+You can check  how many times you visited this site.<br>
 
-"/pics"  <br>
-you can see your uploaded pics name<br>
+<br>
 
-"/port"  <br>
-just see your port unmber to see this site.<br>
+###"/del"
+Delete your cookie.<br>
+
+<br>
+
+###"/pics"
+You can see your uploaded pics name.<br>
+
+<br>
+
+###"/port"
+You can see your port number.<br>
+
 
 ## Requirement
 github.com/google/uuid v1.3.0 // indirect<br>
 golang.org/x/text v0.3.7 // indirect<br>
 
 ## Author
-namshin<br>
+namshin
 
 ## Licence
-Free<br>
+Free
