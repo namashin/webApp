@@ -1,11 +1,11 @@
 package server
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -25,23 +25,23 @@ func Start() {
 
 func (hc *HealthCounter) KillTimer() {
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
 	go func() {
-		for sig := range c {
-			log.Println("killTimer", sig)
-			fmt.Println(hc.GetCounterValue())
-			os.Exit(1)
-		}
+		<-c
+		log.Println("KillTimer", c)
+		os.Exit(2)
 	}()
 }
 
 func (hc *HealthCounter) Counting() {
-	hc.lock.Lock()
-	defer hc.lock.Unlock()
 	hc.KillTimer()
 	for {
 		time.Sleep(1 * time.Second)
+		hc.lock.Lock()
 		hc.counter++
+		hc.lock.Unlock()
+
 		if hc.counter == 10000 {
 			hc.counter = 0
 		}
