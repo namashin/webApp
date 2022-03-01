@@ -3,7 +3,6 @@ package server
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -71,8 +70,6 @@ func (ws *WebServer) checkVisitedCount(c *http.Cookie) int {
 
 		if c.Value == line {
 			visitedCount++
-		} else {
-			continue
 		}
 	}
 	return visitedCount
@@ -106,7 +103,7 @@ func (ws *WebServer) BackToIndex(w http.ResponseWriter, req *http.Request) {
 		log.Println("ERROR in parse files", err)
 		return
 	}
-	err = t.Execute(w, "")
+	err = t.Execute(w, nil)
 	if err != nil {
 		log.Println("ERROR in Execute template", err)
 		return
@@ -118,7 +115,7 @@ func (ws *WebServer) UploadFileHandler(w http.ResponseWriter, req *http.Request)
 	fileExplanation := req.FormValue("fileExplanation")
 
 	if err != nil {
-		log.Println("error in req.FormFile", err)
+		log.Println("error in req.FormFile: => ", err)
 		_, err = io.WriteString(w, "ファイルを選択してください")
 		if err != nil {
 			log.Println(err)
@@ -127,22 +124,18 @@ func (ws *WebServer) UploadFileHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	if !(len(fileExplanation) >= 10) {
-		log.Println("入力された写真の説明が機能していない可能性アリ")
-	}
-
 	err = Save("fileExplanation.txt", fileExplanation)
 	if err != nil {
 		log.Println("fileExplanation.txt does not saved", err)
 		return
 	}
 
-	val, ok := checkPullDownMenu(w, req)
-	if !ok {
-		log.Println("invalid select form")
-		return
-	}
-	fmt.Println("選ばれたのは" + val + "でした")
+	//val, ok := checkPullDownMenu(w, req)
+	//if !ok {
+	//	log.Println("invalid select form")
+	//	return
+	//}
+	//fmt.Println("選ばれたのは" + val + "でした")
 
 	baseDir := GetBaseDirectory()
 
@@ -153,20 +146,14 @@ func (ws *WebServer) UploadFileHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	//defer pFile.Close()
-	defer func() {
-		err = pFile.Close()
-		if err != nil {
-			log.Println("maybe file close error", err)
-			return
-		}
-	}()
+	defer pFile.Close()
 
 	v, err := mf.Seek(0, io.SeekStart)
 	if err != nil {
 		log.Println("error in mf.Seek", err, "walked", v)
 		return
 	}
+
 	_, err = io.Copy(pFile, mf)
 	if err != nil {
 		log.Println("error in io.Copy *FILE", err)
@@ -191,7 +178,7 @@ func (ws *WebServer) index(w http.ResponseWriter, req *http.Request) {
 
 		err = t.Execute(w, token)
 		if err != nil {
-			log.Println("ERROR in execute error", err)
+			log.Println("ERROR: in execute error", err)
 			return
 		}
 	case http.MethodPost:
@@ -200,6 +187,10 @@ func (ws *WebServer) index(w http.ResponseWriter, req *http.Request) {
 		log.Println("ERROR: invalid request method")
 		w.WriteHeader(http.StatusBadRequest)
 	}
+}
+
+func makeFile() {
+
 }
 
 func (ws *WebServer) DisplayPort(w http.ResponseWriter, req *http.Request) {
@@ -229,14 +220,14 @@ func (ws *WebServer) DisplaySavedPic(w http.ResponseWriter, req *http.Request) {
 		log.Println("error in ReadDir", err)
 		return
 	}
-	var Names []string
+	var NamesStrList []string
 
 	for _, fNameInPicsDir := range fNamesInPicsDir {
 		Name := fNameInPicsDir.Name()
-		Names = append(Names, Name)
+		NamesStrList = append(NamesStrList, Name)
 	}
 
-	err = t.Execute(w, Names)
+	err = t.Execute(w, NamesStrList)
 	if err != nil {
 		log.Println("template execute error", err)
 	}
