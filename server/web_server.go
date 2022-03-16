@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"encoding/json"
+	"github.com/xuri/excelize/v2"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -66,9 +67,9 @@ func (ws *WebServer) checkVisitedCount(c *http.Cookie) int {
 	scan := bufio.NewScanner(pFile)
 
 	for i := 0; scan.Scan(); i++ {
-		line := scan.Text()
+		cookieVal := scan.Text()
 
-		if c.Value == line {
+		if c.Value == cookieVal {
 			visitedCount++
 		}
 	}
@@ -189,10 +190,6 @@ func (ws *WebServer) index(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func makeFile() {
-
-}
-
 func (ws *WebServer) DisplayPort(w http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case http.MethodGet:
@@ -233,17 +230,46 @@ func (ws *WebServer) DisplaySavedPic(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-//func Handler(w http.ResponseWriter, req *http.Request) {
-//	io.WriteString(w, "test")
-//}
+func CookieExcelFile() error {
+	f := excelize.NewFile()
+
+	file, _ := os.Open("cookie.txt")
+	scan := bufio.NewScanner(file)
+
+	for i := 0; scan.Scan(); i++ {
+		cellName, _ := excelize.JoinCellName("A", i)
+		f.SetCellValue("Sheet1", cellName, scan.Text())
+	}
+
+	return f.SaveAs("goWeb.xlsx")
+}
+
+func GetExcelData(ExcelFilename string, sheet string, Column string, number int) string {
+	f, err := excelize.OpenFile(ExcelFilename)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cellName, err := excelize.JoinCellName(Column, number)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	value, err := f.GetCellValue(sheet, cellName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return value
+}
 
 func (ws *WebServer) Run() {
 	http.HandleFunc("/", ws.index)
-	//	http.HandleFunc("/test", Handler)
 	http.HandleFunc("/del", ws.ExpireCookie)
 	http.HandleFunc("/del/back", ws.BackToIndex)
 	http.HandleFunc("/cookie", ws.ShowCookieValue)
 	http.HandleFunc("/port", ws.DisplayPort)
 	http.HandleFunc("/pics", ws.DisplaySavedPic)
+
 	log.Fatal(http.ListenAndServe("0.0.0.0:"+strconv.Itoa(int(ws.Port())), nil))
 }
