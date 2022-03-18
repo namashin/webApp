@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"encoding/json"
+	"github.com/jung-kurt/gofpdf"
 	"github.com/xuri/excelize/v2"
 	"html/template"
 	"io"
@@ -72,6 +73,11 @@ func (ws *WebServer) checkVisitedCount(c *http.Cookie) int {
 		if c.Value == cookieVal {
 			visitedCount++
 		}
+
+		if err := scan.Err(); err != nil {
+			log.Fatal(err, "scan cookie.txt error")
+		}
+
 	}
 	return visitedCount
 }
@@ -129,6 +135,11 @@ func (ws *WebServer) UploadFileHandler(w http.ResponseWriter, req *http.Request)
 	if err != nil {
 		log.Println("fileExplanation.txt does not saved", err)
 		return
+	}
+
+	err = GeneratePDF(fileExplanation + ".pdf")
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	//val, ok := checkPullDownMenu(w, req)
@@ -261,6 +272,16 @@ func GetExcelData(ExcelFilename string, sheet string, Column string, number int)
 	}
 
 	return value
+}
+
+func GeneratePDF(filename string) error {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+	pdf.SetFont("Arial", "B", 16)
+	pdf.Cell(40, 10, "hello world")
+	err := pdf.OutputFileAndClose(filename)
+
+	return err
 }
 
 func (ws *WebServer) Run() {
