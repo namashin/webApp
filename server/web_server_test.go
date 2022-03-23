@@ -22,7 +22,7 @@ func TestWebServer_Port(t *testing.T) {
 
 	// Validation
 	if !(p1 == p2) {
-		t.Error("error")
+		t.Fail()
 	}
 }
 
@@ -47,13 +47,18 @@ func TestWebServer_Port(t *testing.T) {
 
 func TestGetCookie(t *testing.T) {
 	// Init
-	req, _ := http.NewRequest(http.MethodGet, "", nil)
+	req, err := http.NewRequest(http.MethodGet, "/cookie", nil)
+	if err != nil {
+		t.Error(err)
+	}
+
 	w := httptest.NewRecorder()
 
 	// execution
 	got := GetCookie(w, req)
 
 	// validation
+	print(got.Value)
 	if !(len(got.Value) > 0) {
 		t.Error("not generated cookie")
 	}
@@ -127,7 +132,12 @@ func TestWebServer_UploadFileHandler(t *testing.T) {
 	ws := NewWebServer(8000, "http://127.0.0.1")
 
 	go func() {
-		defer writer.Close()
+		defer func() {
+			err := writer.Close()
+			if err != nil {
+				t.Error("close pipe writer ERROR")
+			}
+		}()
 		//we create the form data field 'fileupload'
 		//which returns another writer to write the actual file
 
@@ -165,7 +175,24 @@ func TestWebServer_UploadFileHandler(t *testing.T) {
 		t.Errorf("Expected %v, received %d", 302, response.Code)
 	}
 
-	if _, err := os.Stat("./pics/R.png"); os.IsNotExist(err) {
-		t.Error("Expected file ./pics/R.png' to exist")
+	f, err := os.Stat("../pics/R.jpg")
+	if f.Size() < 0 {
+		t.Error("not exist")
+	}
+	if err != nil {
+		t.Error("os.Stat ERROR")
+	}
+}
+
+func TestJsonStatus(t *testing.T) {
+	// Init
+	statusMessage := "success"
+
+	// execution
+	ret := JsonStatus(statusMessage)
+
+	// validation
+	if string(ret) != `{"message":"success"}` {
+		t.Errorf("expected %s  but got %s", `{"message":"success"}`, ret)
 	}
 }

@@ -47,7 +47,7 @@ func (ws *WebServer) ExpireCookie(w http.ResponseWriter, req *http.Request) {
 	c, err := req.Cookie("session")
 	if err != nil {
 		log.Println(string(JsonStatus("fail")))
-		http.Redirect(w, req, "/index", http.StatusSeeOther)
+		return
 	}
 	c.MaxAge = -1
 	http.SetCookie(w, c)
@@ -158,7 +158,12 @@ func (ws *WebServer) UploadFileHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	defer pFile.Close()
+	defer func() {
+		err = pFile.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	v, err := mf.Seek(0, io.SeekStart)
 	if err != nil {
@@ -166,9 +171,9 @@ func (ws *WebServer) UploadFileHandler(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	_, err = io.Copy(pFile, mf)
+	size, err := io.Copy(pFile, mf)
 	if err != nil {
-		log.Println("error in io.Copy *FILE", err)
+		log.Printf("%s: in io.Copy *FILE, written size is %v", err, size)
 		return
 	}
 	log.Println(string(JsonStatus("success")))
@@ -217,7 +222,7 @@ func (ws *WebServer) DisplayPort(w http.ResponseWriter, req *http.Request) {
 // DisplaySavedPic
 // 写真が表示されない なぜ??
 func (ws *WebServer) DisplaySavedPic(w http.ResponseWriter, req *http.Request) {
-	t, err := template.ParseFiles("./templates/display_pic.html")
+	t, err := template.ParseFiles("../templates/display_pic.html")
 	if err != nil {
 		log.Println("error in parse display_pic.html file =>>>", err)
 		return

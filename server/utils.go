@@ -34,7 +34,12 @@ func Save(fileName string, value string) error {
 	if err != nil {
 		log.Fatal("Error in os.OpenFile =>>>", err)
 	}
-	defer f.Close()
+	defer func() {
+		err = f.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	_, err = f.WriteString(value + "\n")
 	if err != nil {
