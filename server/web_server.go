@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"github.com/jung-kurt/gofpdf"
-	"github.com/xuri/excelize/v2"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -104,7 +103,7 @@ func (ws *WebServer) ShowCookieValue(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (ws *WebServer) BackToIndex(w http.ResponseWriter, req *http.Request) {
+func (ws *WebServer) BackToIndex(w http.ResponseWriter, _ *http.Request) {
 	t, err := template.ParseFiles(path.Join("templates", "back.html"))
 	if err != nil {
 		log.Println("ERROR in parse files", err)
@@ -221,7 +220,7 @@ func (ws *WebServer) DisplayPort(w http.ResponseWriter, req *http.Request) {
 
 // DisplaySavedPic
 // 写真が表示されない なぜ??
-func (ws *WebServer) DisplaySavedPic(w http.ResponseWriter, req *http.Request) {
+func (ws *WebServer) DisplaySavedPic(w http.ResponseWriter, _ *http.Request) {
 	t, err := template.ParseFiles("../templates/display_pic.html")
 	if err != nil {
 		log.Println("error in parse display_pic.html file =>>>", err)
@@ -246,38 +245,41 @@ func (ws *WebServer) DisplaySavedPic(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func CookieExcelFile() error {
-	f := excelize.NewFile()
+//func CookieExcelFile() error {
+//	f := excelize.NewFile()
+//
+//	file, _ := os.Open("cookie.txt")
+//	scan := bufio.NewScanner(file)
+//
+//	for i := 0; scan.Scan(); i++ {
+//		cellName, _ := excelize.JoinCellName("A", i)
+//		err := f.SetCellValue("Sheet1", cellName, scan.Text())
+//		if err != nil{
+//			log.Fatal(err)
+//		}
+//	}
+//
+//	return f.SaveAs("goWeb.xlsx")
+//}
 
-	file, _ := os.Open("cookie.txt")
-	scan := bufio.NewScanner(file)
-
-	for i := 0; scan.Scan(); i++ {
-		cellName, _ := excelize.JoinCellName("A", i)
-		f.SetCellValue("Sheet1", cellName, scan.Text())
-	}
-
-	return f.SaveAs("goWeb.xlsx")
-}
-
-func GetExcelData(ExcelFilename string, sheet string, Column string, number int) string {
-	f, err := excelize.OpenFile(ExcelFilename)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	cellName, err := excelize.JoinCellName(Column, number)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	value, err := f.GetCellValue(sheet, cellName)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return value
-}
+//func GetExcelData(ExcelFilename string, sheet string, Column string, number int) string {
+//	f, err := excelize.OpenFile(ExcelFilename)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	cellName, err := excelize.JoinCellName(Column, number)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	value, err := f.GetCellValue(sheet, cellName)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	return value
+//}
 
 func GeneratePDF(filename string) error {
 	pdf := gofpdf.New("P", "mm", "A4", "")
