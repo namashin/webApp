@@ -218,8 +218,6 @@ func (ws *WebServer) DisplayPort(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-// DisplaySavedPic
-// 写真が表示されない なぜ??
 func (ws *WebServer) DisplaySavedPic(w http.ResponseWriter, _ *http.Request) {
 	t, err := template.ParseFiles("../templates/display_pic.html")
 	if err != nil {
